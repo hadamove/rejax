@@ -37,6 +37,7 @@ class SAC(
     num_critics: int = struct.field(pytree_node=False, default=2)
     num_epochs: int = struct.field(pytree_node=False, default=1)
     target_entropy_ratio: chex.Scalar = struct.field(pytree_node=True, default=0.98)
+    train_freq: int = struct.field(pytree_node=True, default=1)
 
     def make_act(self, ts):
         def act(obs, rng):
@@ -156,8 +157,8 @@ class SAC(
                 0, self.num_epochs, lambda _, ts: update_iteration(ts), ts
             )
 
-        start_training = ts.global_step > self.fill_buffer
-        ts = jax.lax.cond(start_training, lambda: do_updates(ts), lambda: ts)
+        should_learn = (ts.global_step > self.fill_buffer) & (ts.global_step % self.train_freq == 0)
+        ts = jax.lax.cond(should_learn, lambda _: do_updates(ts), lambda _: ts, operand=None)
 
         # Update target network
         if self.target_update_freq == 1:
