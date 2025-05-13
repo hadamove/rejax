@@ -61,19 +61,21 @@ class TD3(
         actor_kwargs = config.pop("actor_kwargs", {})
         activation = actor_kwargs.pop("activation", "swish")
         actor_kwargs["activation"] = getattr(nn, activation)
+        hidden_layer_sizes = actor_kwargs.pop("hidden_layer_sizes", (64, 64))
+        actor_kwargs["hidden_layer_sizes"] = tuple(hidden_layer_sizes)
         action_range = (
             env.action_space(env_params).low,
             env.action_space(env_params).high,
         )
         action_dim = np.prod(env.action_space(env_params).shape)
-        actor = DeterministicPolicy(
-            action_dim, action_range, hidden_layer_sizes=(64, 64), **actor_kwargs
-        )
+        actor = DeterministicPolicy(action_dim, action_range, **actor_kwargs)
 
         critic_kwargs = config.pop("critic_kwargs", {})
         activation = critic_kwargs.pop("activation", "swish")
         critic_kwargs["activation"] = getattr(nn, activation)
-        critic = QNetwork(hidden_layer_sizes=(64, 64), **critic_kwargs)
+        hidden_layer_sizes = critic_kwargs.pop("hidden_layer_sizes", (64, 64))
+        critic_kwargs["hidden_layer_sizes"] = tuple(hidden_layer_sizes)
+        critic = QNetwork(**critic_kwargs)
 
         return {"actor": actor, "critic": critic}
 
